@@ -19,3 +19,20 @@ class PhotoServer
   end
 
 end
+
+server = PhotoServer.new
+
+Thread.new do
+  session = AVCapture::Session.new
+  device = AVCapture.devices.find(&:video?)
+
+  session.run_with(device) do |connection|
+    while server.photo_request.pop
+      server.photo_response.push connection.capture
+    end
+  end
+end
+
+URI = "druby://localhost:8787"
+DRb.start_service URI, server
+Drb.thread.join
